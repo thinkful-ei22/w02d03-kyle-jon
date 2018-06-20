@@ -36,8 +36,9 @@ const shoppingList = (function(){
   
   
   function render() {
-    // Filter item list if store prop is true by item.checked === false
     let items = store.items;
+
+    // Filter item list if store prop is true by item.checked === false
     if (store.hideCheckedItems) {
       items = store.items.filter(item => !item.checked);
     }
@@ -47,24 +48,32 @@ const shoppingList = (function(){
       items = store.items.filter(item => item.name.includes(store.searchTerm));
     }
   
-    // render the shopping list in the DOM
     console.log('`render` ran');
     const shoppingListItemsString = generateShoppingItemsString(items);
-  
-    // insert that HTML into the DOM
-    $('.js-shopping-list').html(shoppingListItemsString);
+    const errorToast = (store.error) ? '<h3>${store.error}</h3>' : '';
+
+    $('.js-shopping-list').html(errorToast + shoppingListItemsString);
   }
   
   
   function handleNewItemSubmit() {
     $('#js-shopping-list-form').submit(function (event) {
       event.preventDefault();
+
       const newItemName = $('.js-shopping-list-entry').val();
       $('.js-shopping-list-entry').val('');
-      api.createItem(newItemName,(newItem) => {
+
+      const onSuccess = function(newItem) {
         store.addItem(newItem);
+        store.setError(null);
         render();
-      });
+      };
+      const onError = function(err) {
+        store.setError(err.responseJSON.message);
+        render();
+      };
+
+      api.createItem(newItemName, onSuccess, onError);
     });
   }
   
@@ -79,6 +88,7 @@ const shoppingList = (function(){
       const id = getItemIdFromElement(event.currentTarget);
       const item = store.items.find((item) => item.id === id);
       const checkToggle = { checked: !item.checked };
+
       api.updateItem(id, checkToggle, () => {
         store.findAndUpdate(id, checkToggle);
         render();
@@ -87,13 +97,11 @@ const shoppingList = (function(){
   }
   
   function handleDeleteItemClicked() {
-    // like in `handleItemCheckClicked`, we use event delegation
     $('.js-shopping-list').on('click', '.js-item-delete', event => {
-      // get the index of the item in store.items
       const id = getItemIdFromElement(event.currentTarget);
+
       api.deleteItem(id, () => {
         store.findAndDelete(id);
-        // render the updated shopping list
         render();
       });
     });
@@ -102,9 +110,11 @@ const shoppingList = (function(){
   function handleEditShoppingItemSubmit() {
     $('.js-shopping-list').on('submit', '.js-edit-item', event => {
       event.preventDefault();
+
       const id = getItemIdFromElement(event.currentTarget);
       const name = $(event.currentTarget).find('.shopping-item').val();
       const nameObj = { name };
+
       api.updateItem(id, nameObj, () => {
         store.findAndUpdate(id, nameObj);
         render();
@@ -122,6 +132,7 @@ const shoppingList = (function(){
   function handleShoppingListSearch() {
     $('.js-shopping-list-search-entry').on('keyup', event => {
       const val = $(event.currentTarget).val();
+
       store.setSearchTerm(val);
       render();
     });

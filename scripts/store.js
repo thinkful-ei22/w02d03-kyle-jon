@@ -27,10 +27,15 @@ const store = (function(){
     this.searchTerm = term;
   };
 
+  const setError = function(message) {
+    this.error = message;
+  };
+
   return {
     items: [],
     hideCheckedItems: false,
     searchTerm: '',
+    error: null,
 
     addItem,
     findById,
@@ -38,6 +43,7 @@ const store = (function(){
     findAndDelete,
     toggleCheckedFilter,
     setSearchTerm,
+    setError
   };
   
 }());
